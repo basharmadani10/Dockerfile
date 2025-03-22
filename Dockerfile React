@@ -1,0 +1,12 @@
+#React Development (!Produaction)
+
+# Stage 1: Build the React app
+FROM node:18
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+# option 
+RUN ln -s /app/src/Components/profile/Profile.jsx /app/src/Components/profile/profile.jsx
+EXPOSE 5173
+CMD ["npm", "run", "dev"]
