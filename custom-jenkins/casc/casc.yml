@@ -1,0 +1,81 @@
+jenkins:
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: admin
+          password: "admin"
+  authorizationStrategy:
+    globalMatrix:
+      permissions:
+        - "Overall/Administer:admin"
+        - "Overall/Read:authenticated"
+# tools
+  tools:
+    jdk:
+      installations:
+        - name: "Java-17"
+          home: "/usr/lib/jvm/java-17-openjdk"
+        
+#  Worker Node Configuration
+  nodes:
+    - permanent:
+        name: "worker-node-1"
+        numExecutors: 2
+        remoteFS: "/home/jenkins"
+        labelString: "linux-worker"
+        mode: NORMAL
+        launcher:
+          ssh:
+            host: "worker-node-1.yourdomain.com"
+            credentialsId: "ssh-credentials-id"
+            port: 22
+            javaPath: "/usr/lib/jvm/java-17-openjdk"
+            launchTimeoutSeconds: 60
+            maxNumRetries: 5
+            retryWaitTime: 10
+  # Credentials 
+  credentials:
+    system:
+      domainCredentials:
+        - credentials:
+            - usernamePassword:
+                id: "ssh-credentials-id"
+                username: "jenkins"
+                password: "your_password_here"
+                description: "SSH credentials for Worker Node"
+  # Jobs
+  jobs:
+    - script: |
+        pipelineJob('example-pipeline') {
+          definition {
+            cps {
+              script("""
+                pipeline {
+                  agent any
+                  stages {
+                    stage('Build') {
+                      steps {
+                        echo 'Building...'
+                      }
+                    }
+                    stage('Test') {
+                      steps {
+                        echo 'Testing...'
+                      }
+                    }
+                    stage('Deploy') {
+                      steps {
+                        echo 'Deploying...'
+                      }
+                    }
+                  }
+                }
+              """.stripIndent())
+              sandbox(true)
+            }
+          }
+        }
+unclassified:
+  location:
+    adminAddress: "xavi@jenkins.com"

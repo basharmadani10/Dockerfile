@@ -1,0 +1,12 @@
+ant:latest
+build-timeout:latest
+configuration-as-code:latest
+credentials-binding:latest
+email-ext:latest
+git:latest
+github-branch-source:latest
+ldap:latest
+mailer:latest
+matrix-auth:latest
+pam-auth:latest
+ssh-slaves:latest
