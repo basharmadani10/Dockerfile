@@ -1,0 +1,67 @@
+FROM ubuntu:latest
+
+# Install dependencies as root
+USER root
+
+# Create docker group first to avoid issues
+RUN groupadd docker
+
+# Create jenkins user with proper groups
+RUN useradd -ms /bin/bash -G docker jenkins
+
+# Create directory with proper ownership
+RUN mkdir -p /jenkins_home && \
+    chown jenkins:jenkins /jenkins_home && \
+    chmod 775 /jenkins_home
+
+# Install packages in a single RUN to reduce layers
+RUN apt-get update -qq && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+        openjdk-17-jdk \
+        openssh-server \
+        apt-transport-https \
+        ca-certificates \
+        curl \
+        nano \
+        vim \
+        gnupg2 \
+        software-properties-common \
+        && \
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+    $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list && \
+    apt-get update -qq && \
+    apt-get install -y -qq docker-ce-cli docker-buildx-plugin docker-compose-plugin && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Configure SSH
+RUN mkdir -p /home/jenkins/.ssh && \
+    chown jenkins:jenkins /home/jenkins/.ssh && \
+    chmod 700 /home/jenkins/.ssh
+
+# Copy SSH public key (ensure id_rsa.pub exists in build context)
+COPY id_rsa.pub /home/jenkins/.ssh/authorized_keys
+RUN chown jenkins:jenkins /home/jenkins/.ssh/authorized_keys && \
+    chmod 600 /home/jenkins/.ssh/authorized_keys
+
+# SSH setup
+RUN mkdir /var/run/sshd && \
+    echo "PasswordAuthentication no" >> /etc/ssh/sshd_config && \
+    echo "PermitRootLogin no" >> /etc/ssh/sshd_config && \
+    echo "AuthorizedKeysFile .ssh/authorized_keys" >> /etc/ssh/sshd_config
+
+# Switch to jenkins user
+USER jenkins
+WORKDIR /jenkins_home
+
+# Start SSH when container runs (as root)
+USER root
+CMD ["/usr/sbin/sshd", "-D"]
+# slavery jenkins with docker but u need to bind mount to   host's docker socket /var/run/docker.sock
+#befor build docker image run ssh-keygen and save puplickey and private key to copy this file 
+
+
+
+# put ip container in HOst  and put private key in jenkins ui
+# authoriezed ==> public-key
